@@ -19,7 +19,6 @@ export const env = {
     privateKey: () => required('FIREBASE_ADMIN_PRIVATE_KEY').replace(/\\n/g, '\n'),
   },
   sheets: {
-    keyFilePath: () => required('GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY_PATH'),
     spreadsheetId: () => required('GOOGLE_SHEETS_SPREADSHEET_ID'),
     cocPointsTab: () =>
       process.env.GOOGLE_SHEETS_COC_POINTS_TAB ?? 'COC-Points (Since 21st July 2026)',
