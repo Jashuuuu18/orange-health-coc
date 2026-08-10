@@ -15,14 +15,17 @@ function pointsTone(raw: string): 'red' | 'brand' | 'ink' {
   return 'ink'
 }
 
-export function PenaltyPointTables({ sections }: { sections: SlideTableSection[] }) {
+export function PolicyTableSections({
+  sections,
+  emptyMessage = "No tables found yet. Once your team adds one, it'll show up here automatically.",
+}: {
+  sections: SlideTableSection[]
+  emptyMessage?: string
+}) {
   if (sections.length === 0) {
     return (
       <Card>
-        <p className="text-sm text-ink-500">
-          No tables found in the policy deck yet. Once your team adds one, it&apos;ll show up here
-          automatically.
-        </p>
+        <p className="text-sm text-ink-500">{emptyMessage}</p>
       </Card>
     )
   }

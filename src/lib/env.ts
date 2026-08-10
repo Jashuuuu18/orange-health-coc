@@ -22,6 +22,7 @@ export const env = {
     spreadsheetId: () => required('GOOGLE_SHEETS_SPREADSHEET_ID'),
     cocPointsTab: () =>
       process.env.GOOGLE_SHEETS_COC_POINTS_TAB ?? 'COC-Points (Since 21st July 2026)',
+    masterTab: () => process.env.GOOGLE_SHEETS_MASTER_TAB ?? 'Master',
   },
   slides: {
     presentationId: () => required('GOOGLE_SLIDES_PRESENTATION_ID'),

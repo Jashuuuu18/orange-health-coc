@@ -1,5 +1,5 @@
 import { getPenaltyPointTables } from '@/lib/slides/policy'
-import { PenaltyPointTables } from '@/components/coc/PenaltyPointTables'
+import { PolicyTableSections } from '@/components/coc/PolicyTableSections'
 
 export default async function PenaltyPointsPage() {
   const sections = await getPenaltyPointTables()
@@ -13,7 +13,7 @@ export default async function PenaltyPointsPage() {
           policy deck. More tables will appear here automatically as they&apos;re added.
         </p>
       </div>
-      <PenaltyPointTables sections={sections} />
+      <PolicyTableSections sections={sections} />
     </div>
   )
 }
