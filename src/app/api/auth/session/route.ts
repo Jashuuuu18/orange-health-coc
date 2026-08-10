@@ -30,7 +30,8 @@ export async function POST(request: Request) {
   let decoded: { uid: string; email?: string }
   try {
     decoded = await adminAuth().verifyIdToken(idToken)
-  } catch {
+  } catch (err) {
+    console.error('verifyIdToken failed:', err)
     return NextResponse.json({ error: 'Invalid or expired credentials' }, { status: 401 })
   }
 
