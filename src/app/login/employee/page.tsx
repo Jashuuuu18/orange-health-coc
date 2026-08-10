@@ -7,7 +7,12 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Label } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
-import { employeeSignIn, employeeSignUp, AuthActionError } from '@/lib/auth/client-actions'
+import {
+  employeeSignIn,
+  employeeSignUp,
+  resetPassword,
+  AuthActionError,
+} from '@/lib/auth/client-actions'
 
 export default function EmployeeLoginPage() {
   const router = useRouter()
@@ -22,6 +27,25 @@ export default function EmployeeLoginPage() {
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  const [resetting, setResetting] = useState(false)
+
+  async function handleForgotPassword() {
+    setError(null)
+    if (!email.trim()) {
+      setError('Enter your email above first, then click "Forgot password?"')
+      return
+    }
+    setResetting(true)
+    try {
+      await resetPassword(email.trim())
+      setResetSent(true)
+    } catch (err) {
+      setError(err instanceof AuthActionError ? err.message : 'Something went wrong.')
+    } finally {
+      setResetting(false)
+    }
+  }
 
   async function verifyEmployeeId() {
     setVerifyError(null)
@@ -72,6 +96,7 @@ export default function EmployeeLoginPage() {
     setError(null)
     setChecked(null)
     setVerifyError(null)
+    setResetSent(false)
   }
 
   return (
@@ -141,7 +166,19 @@ export default function EmployeeLoginPage() {
               )}
             </div>
             <div>
-              <Label>Password</Label>
+              <div className="flex items-center justify-between">
+                <Label>Password</Label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetting}
+                    className="mb-1.5 text-xs text-ink-500 hover:text-brand-600"
+                  >
+                    {resetting ? 'Sending…' : 'Forgot password?'}
+                  </button>
+                )}
+              </div>
               <Input
                 type="password"
                 required
@@ -152,6 +189,12 @@ export default function EmployeeLoginPage() {
                 placeholder="••••••••"
               />
             </div>
+
+            {resetSent && (
+              <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+                If an account exists for that email, a password reset link has been sent.
+              </p>
+            )}
 
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>

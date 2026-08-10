@@ -2,6 +2,7 @@
 
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   type User,
@@ -94,6 +95,19 @@ export async function employeeSignUp(email: string, password: string, employeeId
     return await establishServerSession(cred.user, true, employeeId)
   } catch (err) {
     if (err instanceof AuthActionError) throw err
+    throw new AuthActionError(friendlyFirebaseError(err))
+  }
+}
+
+export async function resetPassword(email: string) {
+  try {
+    await sendPasswordResetEmail(firebaseAuth, email)
+  } catch (err) {
+    // Don't reveal whether the email has an account — just surface real
+    // input errors (bad email format, rate limiting), same as Firebase's
+    // own reasoning for treating unknown-email as a silent success.
+    const code = (err as { code?: string })?.code ?? ''
+    if (code === 'auth/user-not-found') return
     throw new AuthActionError(friendlyFirebaseError(err))
   }
 }

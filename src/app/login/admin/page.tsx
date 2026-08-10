@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Label } from '@/components/ui/Input'
-import { adminSignIn, adminSignUp, AuthActionError } from '@/lib/auth/client-actions'
+import { adminSignIn, adminSignUp, resetPassword, AuthActionError } from '@/lib/auth/client-actions'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -15,6 +15,8 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -32,6 +34,23 @@ export default function AdminLoginPage() {
       setError(err instanceof AuthActionError ? err.message : 'Something went wrong.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleForgotPassword() {
+    setError(null)
+    if (!email.trim()) {
+      setError('Enter your email above first, then click "Forgot password?"')
+      return
+    }
+    setResetting(true)
+    try {
+      await resetPassword(email.trim())
+      setResetSent(true)
+    } catch (err) {
+      setError(err instanceof AuthActionError ? err.message : 'Something went wrong.')
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -53,7 +72,10 @@ export default function AdminLoginPage() {
                 required
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setResetSent(false)
+                }}
                 placeholder="you@orangehealth.in"
               />
               {mode === 'signup' && (
@@ -61,7 +83,19 @@ export default function AdminLoginPage() {
               )}
             </div>
             <div>
-              <Label>Password</Label>
+              <div className="flex items-center justify-between">
+                <Label>Password</Label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetting}
+                    className="mb-1.5 text-xs text-ink-500 hover:text-brand-600"
+                  >
+                    {resetting ? 'Sending…' : 'Forgot password?'}
+                  </button>
+                )}
+              </div>
               <Input
                 type="password"
                 required
@@ -72,6 +106,12 @@ export default function AdminLoginPage() {
                 placeholder="••••••••"
               />
             </div>
+
+            {resetSent && (
+              <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+                If an account exists for that email, a password reset link has been sent.
+              </p>
+            )}
 
             {error && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
@@ -87,6 +127,7 @@ export default function AdminLoginPage() {
             onClick={() => {
               setMode((m) => (m === 'signin' ? 'signup' : 'signin'))
               setError(null)
+              setResetSent(false)
             }}
             className="mt-4 w-full text-center text-xs text-ink-500 hover:text-brand-600"
           >
