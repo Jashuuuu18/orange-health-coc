@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Orange Health — Code of Conduct Dashboard
 
-## Getting Started
+Read-only dashboard for Operations and Emedics to track Code of Conduct (COC)
+points. Data lives in a Google Sheet that Ops edits directly; this app never
+writes to it. Auth and role/Employee-ID mapping are backed by Firebase.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router, Turbopack) + Tailwind CSS v4
+- Firebase Authentication (client) + Firebase Admin SDK (server session cookies + Firestore role/Employee-ID store)
+- Google Sheets API (service account, read-only) as the single source of truth for COC data
+- Deploy target: Vercel
+
+## One-time setup
+
+### 1. Firebase project
+
+1. [console.firebase.google.com](https://console.firebase.google.com) → **Add project**.
+2. **Build → Authentication → Get started** → enable **Email/Password** sign-in.
+3. **Build → Firestore Database → Create database** → start in **Production mode** (any region). The app only ever touches Firestore via the Admin SDK on the server, so leave the default rules — client-side Firestore access is never used and should stay locked down.
+4. **Project settings → General → Your apps → Add app (Web `</>`)** → copy the `firebaseConfig` values into `.env.local` as `NEXT_PUBLIC_FIREBASE_*`.
+5. **Project settings → Service accounts → Generate new private key** → downloads a JSON file. Fill `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, and `FIREBASE_ADMIN_PRIVATE_KEY` (keep the `\n` escapes, wrap in quotes) from that file into `.env.local`. Do not commit this file.
+
+### 2. Google Sheet access
+
+1. In the same (or a separate) Google Cloud project, enable the **Google Sheets API** and create a **Service Account**.
+2. Generate a JSON key for it and save it locally, e.g. `~/orange-health-coc/service-account.json` (already gitignored).
+3. Open the target Google Sheet → **Share** → add the service account's `client_email` (from the JSON) as **Viewer**.
+4. Set `GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY_PATH` to that file's path and `GOOGLE_SHEETS_SPREADSHEET_ID` to the sheet ID (the string between `/d/` and `/edit` in the URL) in `.env.local`.
+5. Confirm the tab names in `.env.local` (`GOOGLE_SHEETS_COC_POINTS_TAB`, `GOOGLE_SHEETS_MASTER_TAB`) match the sheet exactly.
+
+### 3. Admin access
+
+There's no separate "make someone an admin" UI — it's allowlist-based:
+
+1. Add the Ops team's emails to `ADMIN_EMAIL_ALLOWLIST` in `.env.local` (comma-separated).
+2. Each person visits `/login/admin` and uses **"First time? Create an admin account"** once with their allow-listed email — this both creates their Firebase Auth account and marks them `role: admin` in Firestore. After that they just sign in normally.
+3. To revoke admin access, remove the email from the allowlist (existing sessions still work until they expire; delete their Firestore `users/{uid}` doc to fully cut access).
+
+### 4. Employee access
+
+Employees self-sign-up at `/login/employee`: they enter their **Employee ID**,
+which is verified server-side against the distinct Employee IDs already
+present in the COC-Points sheet before an account can be created. The
+Employee ID is then permanently tied to their account in Firestore — it's
+never read from client input again after signup, so an employee can never
+switch which record they see.
+
+**Known limitation:** because there's no separate employee roster sheet, an
+employee with zero violations on record can't self-verify yet — they'll be
+able to sign up as soon as Ops logs their first entry. If that's a problem in
+practice, the fix is adding an Employee roster sheet/tab and switching
+`employeeIdExists` in `src/lib/sheets/coc-points.ts` to check that instead.
+
+### 5. Run it
 
 ```bash
+cp .env.local.example .env.local   # fill in the values from steps 1–3
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Data mapping
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`src/lib/sheets/parse.ts` maps sheet columns by **header name** (case/spacing
+insensitive, with a few common aliases) rather than fixed column letters, so
+minor header edits in the sheet won't break parsing. If a required column
+truly goes missing or gets renamed to something not in the alias list, the
+app throws a clear error naming exactly which column is missing and what
+headers it did find — extend the alias arrays in that file if that happens.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Expected columns:
 
-## Learn More
+- **COC-Points sheet**: Employee ID, Employee Name, Role, Date, Violation, Points, Remarks
+- **Master sheet**: Violation Name, Penalty Points, Description
 
-To learn more about Next.js, take a look at the following resources:
+Dates are parsed leniently (`YYYY-MM-DD`, `DD/MM/YYYY`, `DD-MM-YYYY`); an
+unparseable date falls back to showing the sheet's raw text so nothing is
+silently dropped.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Sheet reads are cached in-memory for 15s (COC-Points) / 60s (Master) per
+server instance to avoid hammering the Sheets API — data is never more than
+that far behind what's in the sheet.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploying to Vercel
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push this repo to GitHub, import it in Vercel.
+2. Add every variable from `.env.local` as a Vercel environment variable —
+   **except** `GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY_PATH`. Vercel's filesystem is
+   ephemeral, so instead: base64-encode the service-account JSON
+   (`base64 -i service-account.json`), store it as
+   `GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY_JSON_BASE64`, and adjust
+   `src/lib/sheets/client.ts` to build `GoogleAuth({ credentials: JSON.parse(atob(...)) })`
+   instead of `keyFile` when that variable is present. (Left as a follow-up —
+   local/VM deploys with a real file on disk work as-is.)
+3. Deploy.
