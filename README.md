@@ -78,6 +78,15 @@ Dates are parsed leniently (`YYYY-MM-DD`, `DD/MM/YYYY`, `DD-MM-YYYY`); an
 unparseable date falls back to showing the sheet's raw text so nothing is
 silently dropped.
 
+**Temporary placeholder:** the Master tab is actually a multi-section policy
+document (sections A–D), not a flat table — the flat parser above only
+handles the violations table part of it. The "D. Penalty Point System"
+section (its own Violation/Points/Penalty table + disciplinary thresholds)
+is hardcoded in `src/lib/policy/penalty-points.ts` from a screenshot, and is
+known to be incomplete (only 3 of the sheet's rows were visible). Once Sheets
+API credentials are wired up, inspect the real Master tab layout and replace
+that file with a proper parser for the full document.
+
 Sheet reads are cached in-memory for 15s (COC-Points) / 60s (Master) per
 server instance to avoid hammering the Sheets API — data is never more than
 that far behind what's in the sheet.
