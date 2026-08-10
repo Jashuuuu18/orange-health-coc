@@ -7,7 +7,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/auth/session'
 // (signature + role) happens per-route via requireAdmin()/requireEmployee()
 // in each protected layout, since that's the boundary Next.js guarantees is
 // actually enforced for every request (see proxy.js docs on Server Functions).
-const PROTECTED_PREFIXES = ['/admin', '/employee', '/code-of-conduct']
+const PROTECTED_PREFIXES = ['/admin', '/employee', '/code-of-conduct', '/penalty-points']
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -24,5 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/employee/:path*', '/code-of-conduct/:path*'],
+  matcher: ['/admin/:path*', '/employee/:path*', '/code-of-conduct/:path*', '/penalty-points/:path*'],
 }

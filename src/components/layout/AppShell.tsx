@@ -16,7 +16,11 @@ function linksForRole(role: UserRole): NavLink[] {
     role === 'admin'
       ? [{ href: '/admin/dashboard', label: 'Dashboard' }]
       : [{ href: '/employee/dashboard', label: 'My Dashboard' }]
-  return [...base, { href: '/code-of-conduct', label: 'Code of Conduct' }]
+  return [
+    ...base,
+    { href: '/code-of-conduct', label: 'Code of Conduct' },
+    { href: '/penalty-points', label: 'Penalty Points' },
+  ]
 }
 
 export function AppShell({

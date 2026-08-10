@@ -20,13 +20,6 @@ export interface CocRecord {
   remarks: string
 }
 
-export interface MasterViolation {
-  rowNumber: number
-  violation: string
-  points: number
-  description: string
-}
-
 export interface EmployeeSummary {
   employeeId: string
   employeeName: string
