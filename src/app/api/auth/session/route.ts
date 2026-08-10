@@ -56,15 +56,11 @@ export async function POST(request: Request) {
     role = data.role
     employeeId = data.employeeId ?? null
   } else if (signupEmployeeId) {
-    // First-time employee sign-in: verify the Employee ID against the sheet
-    // server-side (never trust the client) before creating the profile.
-    const { exists, employeeName } = await employeeIdExists(signupEmployeeId)
-    if (!exists) {
-      return NextResponse.json(
-        { error: 'That Employee ID was not found in the COC tracker.' },
-        { status: 400 }
-      )
-    }
+    // First-time employee sign-up. There's no employee roster sheet, so an
+    // ID with zero rows in COC-Points can't be told apart from a made-up
+    // one — accept it either way and treat it as a zero-points employee.
+    // If they do have a record, grab their name from it for a nicer profile.
+    const { employeeName } = await employeeIdExists(signupEmployeeId)
     role = 'employee'
     employeeId = signupEmployeeId
     await userDocRef.set({

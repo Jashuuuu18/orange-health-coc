@@ -47,18 +47,20 @@ New sign-ups (admin or employee) are also restricted to the `ALLOWED_EMAIL_DOMAI
 
 ### 4. Employee access
 
-Employees self-sign-up at `/login/employee`: they enter their **Employee ID**,
-which is verified server-side against the distinct Employee IDs already
-present in the COC-Points sheet before an account can be created. The
-Employee ID is then permanently tied to their account in Firestore — it's
-never read from client input again after signup, so an employee can never
-switch which record they see.
+Employees self-sign-up at `/login/employee`: they enter their **Employee ID**
+and email. There's no separate employee roster sheet, so any well-formed
+Employee ID is accepted at sign-up (an ID with zero rows in COC-Points can't
+be told apart from a made-up one without one) — if they do have violations on
+record, their name gets pulled in automatically; if not, they're treated as a
+zero-points employee. The Employee ID is permanently tied to their account in
+Firestore at that point — never read from client input again after signup —
+so an employee can never switch which record they see, and re-checking an ID
+doesn't change anyone's assignment.
 
-**Known limitation:** because there's no separate employee roster sheet, an
-employee with zero violations on record can't self-verify yet — they'll be
-able to sign up as soon as Ops logs their first entry. If that's a problem in
-practice, the fix is adding an Employee roster sheet/tab and switching
-`employeeIdExists` in `src/lib/sheets/coc-points.ts` to check that instead.
+If ID-squatting (someone signing up with a real coworker's Employee ID before
+that coworker does) becomes a real problem, the fix is adding an actual
+employee roster sheet/tab and checking against that instead of accepting any
+ID, in `employeeIdExists` in `src/lib/sheets/coc-points.ts`.
 
 ### 5. Run it
 

@@ -16,7 +16,7 @@ export default function EmployeeLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [employeeId, setEmployeeId] = useState('')
-  const [verified, setVerified] = useState<{ name: string } | null>(null)
+  const [checked, setChecked] = useState<{ name: string | null; hasRecord: boolean } | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
 
@@ -25,7 +25,7 @@ export default function EmployeeLoginPage() {
 
   async function verifyEmployeeId() {
     setVerifyError(null)
-    setVerified(null)
+    setChecked(null)
     if (!employeeId.trim()) return
     setVerifying(true)
     try {
@@ -35,15 +35,9 @@ export default function EmployeeLoginPage() {
         body: JSON.stringify({ employeeId: employeeId.trim() }),
       })
       const body = await res.json()
-      if (body.valid) {
-        setVerified({ name: body.employeeName })
-      } else {
-        setVerifyError(
-          "Employee ID not found in the tracker yet. You'll be able to sign up once Ops logs your first entry."
-        )
-      }
+      setChecked({ name: body.employeeName ?? null, hasRecord: Boolean(body.hasRecord) })
     } catch {
-      setVerifyError('Could not verify Employee ID. Please try again.')
+      setVerifyError('Could not check Employee ID. Please try again.')
     } finally {
       setVerifying(false)
     }
@@ -57,8 +51,8 @@ export default function EmployeeLoginPage() {
       if (mode === 'signin') {
         await employeeSignIn(email, password)
       } else {
-        if (!verified) {
-          setError('Please verify your Employee ID first.')
+        if (!checked) {
+          setError('Please check your Employee ID first.')
           setLoading(false)
           return
         }
@@ -76,7 +70,7 @@ export default function EmployeeLoginPage() {
   function switchMode(next: 'signin' | 'signup') {
     setMode(next)
     setError(null)
-    setVerified(null)
+    setChecked(null)
     setVerifyError(null)
   }
 
@@ -104,7 +98,7 @@ export default function EmployeeLoginPage() {
                     value={employeeId}
                     onChange={(e) => {
                       setEmployeeId(e.target.value)
-                      setVerified(null)
+                      setChecked(null)
                       setVerifyError(null)
                     }}
                     placeholder="e.g. OH1234"
@@ -115,12 +109,17 @@ export default function EmployeeLoginPage() {
                     onClick={verifyEmployeeId}
                     disabled={verifying || !employeeId.trim()}
                   >
-                    {verifying ? '…' : 'Verify'}
+                    {verifying ? '…' : 'Check'}
                   </Button>
                 </div>
-                {verified && (
+                {checked && checked.hasRecord && (
                   <div className="mt-2">
-                    <Badge tone="green">Verified: {verified.name}</Badge>
+                    <Badge tone="green">Found: {checked.name}</Badge>
+                  </div>
+                )}
+                {checked && !checked.hasRecord && (
+                  <div className="mt-2">
+                    <Badge tone="brand">No violations on record yet — 0 points. You&apos;re good to go!</Badge>
                   </div>
                 )}
                 {verifyError && <p className="mt-2 text-xs text-red-600">{verifyError}</p>}
@@ -160,7 +159,7 @@ export default function EmployeeLoginPage() {
 
             <Button
               type="submit"
-              disabled={loading || (mode === 'signup' && !verified)}
+              disabled={loading || (mode === 'signup' && !checked)}
               className="mt-1 w-full"
             >
               {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
