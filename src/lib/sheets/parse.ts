@@ -43,6 +43,13 @@ const DATE_FORMATS: RegExp[] = [
   /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // DD-MM-YYYY
 ]
 
+// "7 - Aug - 26", "07-Aug-2026", "7 Aug 26" — day, textual month, 2-or-4-digit year.
+const MONTH_NAME_FORMAT = /^(\d{1,2})\s*[-\s]\s*([A-Za-z]{3,})\s*[-\s]\s*(\d{2,4})$/
+const MONTH_NAMES: Record<string, string> = {
+  jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+  jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+}
+
 /** Best-effort parse of a sheet date cell into an ISO (YYYY-MM-DD) string. */
 export function parseSheetDate(raw: string | number | undefined | null): string | null {
   if (raw === undefined || raw === null || raw === '') return null
@@ -60,6 +67,17 @@ export function parseSheetDate(raw: string | number | undefined | null): string 
     const day = a.padStart(2, '0')
     const month = b.padStart(2, '0')
     if (Number(day) <= 31 && Number(month) <= 12) {
+      return `${year}-${month}-${day}`
+    }
+  }
+
+  const named = str.match(MONTH_NAME_FORMAT)
+  if (named) {
+    const [, dayRaw, monthRaw, yearRaw] = named
+    const month = MONTH_NAMES[monthRaw.slice(0, 3).toLowerCase()]
+    if (month) {
+      const day = dayRaw.padStart(2, '0')
+      const year = yearRaw.length === 2 ? `20${yearRaw}` : yearRaw
       return `${year}-${month}-${day}`
     }
   }
