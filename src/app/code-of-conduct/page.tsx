@@ -1,5 +1,6 @@
 import { getMasterViolations } from '@/lib/sheets/master'
 import { PolicyTable } from '@/components/coc/PolicyTable'
+import { PenaltyPointSystem } from '@/components/coc/PenaltyPointSystem'
 
 export default async function CodeOfConductPage() {
   const violations = await getMasterViolations()
@@ -14,6 +15,7 @@ export default async function CodeOfConductPage() {
         </p>
       </div>
       <PolicyTable violations={violations} />
+      <PenaltyPointSystem />
     </div>
   )
 }
