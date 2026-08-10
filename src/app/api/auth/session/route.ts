@@ -38,6 +38,16 @@ export async function POST(request: Request) {
   const userDocRef = adminDb().collection('users').doc(decoded.uid)
   const existingDoc = await userDocRef.get()
 
+  const allowedDomain = env.allowedEmailDomain()
+  const emailDomain = email.split('@')[1]?.toLowerCase() ?? ''
+  const isNewAccount = !existingDoc.exists
+  if (isNewAccount && emailDomain !== allowedDomain) {
+    return NextResponse.json(
+      { error: `Sign-up is restricted to @${allowedDomain} email addresses.` },
+      { status: 403 }
+    )
+  }
+
   let role: UserRole
   let employeeId: string | null = null
 

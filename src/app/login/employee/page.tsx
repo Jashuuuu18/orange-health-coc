@@ -137,6 +137,9 @@ export default function EmployeeLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@orangehealth.in"
               />
+              {mode === 'signup' && (
+                <p className="mt-1.5 text-xs text-ink-400">Must be an @orangehealth.in email.</p>
+              )}
             </div>
             <div>
               <Label>Password</Label>

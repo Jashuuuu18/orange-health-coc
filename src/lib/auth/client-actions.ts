@@ -12,6 +12,7 @@ export class AuthActionError extends Error {}
 
 async function establishServerSession(
   user: User,
+  isNewSignup: boolean,
   signupEmployeeId?: string
 ): Promise<{ role: 'admin' | 'employee'; employeeId: string | null }> {
   const idToken = await user.getIdToken()
@@ -23,10 +24,10 @@ async function establishServerSession(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    // If we just created a brand-new Firebase user but the server rejected
-    // them (e.g. not on the admin allowlist), don't leave an orphaned,
-    // unauthorized auth account behind.
-    if (signupEmployeeId === undefined) {
+    // Only delete the Firebase Auth account if we just created it in this
+    // same flow and the server rejected it — never delete on a sign-in
+    // failure, since that would destroy a legitimate existing account.
+    if (isNewSignup) {
       await user.delete().catch(() => signOut(firebaseAuth))
     } else {
       await signOut(firebaseAuth)
@@ -60,7 +61,7 @@ function friendlyFirebaseError(err: unknown): string {
 export async function adminSignIn(email: string, password: string) {
   try {
     const cred = await signInWithEmailAndPassword(firebaseAuth, email, password)
-    return await establishServerSession(cred.user)
+    return await establishServerSession(cred.user, false)
   } catch (err) {
     if (err instanceof AuthActionError) throw err
     throw new AuthActionError(friendlyFirebaseError(err))
@@ -70,7 +71,7 @@ export async function adminSignIn(email: string, password: string) {
 export async function adminSignUp(email: string, password: string) {
   try {
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password)
-    return await establishServerSession(cred.user)
+    return await establishServerSession(cred.user, true)
   } catch (err) {
     if (err instanceof AuthActionError) throw err
     throw new AuthActionError(friendlyFirebaseError(err))
@@ -80,7 +81,7 @@ export async function adminSignUp(email: string, password: string) {
 export async function employeeSignIn(email: string, password: string) {
   try {
     const cred = await signInWithEmailAndPassword(firebaseAuth, email, password)
-    return await establishServerSession(cred.user)
+    return await establishServerSession(cred.user, false)
   } catch (err) {
     if (err instanceof AuthActionError) throw err
     throw new AuthActionError(friendlyFirebaseError(err))
@@ -90,7 +91,7 @@ export async function employeeSignIn(email: string, password: string) {
 export async function employeeSignUp(email: string, password: string, employeeId: string) {
   try {
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password)
-    return await establishServerSession(cred.user, employeeId)
+    return await establishServerSession(cred.user, true, employeeId)
   } catch (err) {
     if (err instanceof AuthActionError) throw err
     throw new AuthActionError(friendlyFirebaseError(err))

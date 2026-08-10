@@ -30,4 +30,6 @@ export const env = {
       .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
+  allowedEmailDomain: (): string =>
+    (process.env.ALLOWED_EMAIL_DOMAIN ?? 'orangehealth.in').trim().toLowerCase(),
 }
