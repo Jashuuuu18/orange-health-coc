@@ -1,6 +1,6 @@
 import { env } from '@/lib/env'
 import type { CocRecord, DashboardSummary, EmployeeSummary } from '@/lib/types'
-import { getSheetValues, listSheetTabs } from './client'
+import { getSheetValues, summarizeAllTabs } from './client'
 import { buildColumnIndex, parseSheetDate, toNumber, toText } from './parse'
 
 type Field = 'employeeId' | 'employeeName' | 'role' | 'date' | 'violation' | 'points' | 'remarks'
@@ -22,11 +22,11 @@ async function fetchCocRecords(): Promise<CocRecord[]> {
   const rows = await getSheetValues(env.sheets.cocPointsTab())
 
   // Temporary diagnostic: what exactly did this live read return?
-  const tabs = await listSheetTabs().catch((e) => [`tab list failed: ${e.message}`])
+  const tabs = await summarizeAllTabs(parseSheetDate).catch((e) => [`tab summary failed: ${e.message}`])
   console.error(
-    `COC DIAGNOSTIC fetchedAt=${new Date().toISOString()} reading tab="${env.sheets.cocPointsTab()}" ` +
-      `rows(incl header)=${rows.length} lastRow=${JSON.stringify(rows[rows.length - 1]?.slice(0, 4))} ` +
-      `workbookTabs=${JSON.stringify(tabs)}`
+    `COC DIAGNOSTIC fetchedAt=${new Date().toISOString()} appReadsTab="${env.sheets.cocPointsTab()}" ` +
+      `rows(incl header)=${rows.length} || ` +
+      tabs.join(' || ')
   )
 
   if (rows.length === 0) return []
