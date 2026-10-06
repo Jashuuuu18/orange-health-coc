@@ -30,7 +30,7 @@ export default function LoginChooserPage() {
             <Card className="cursor-pointer transition-shadow hover:shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-ink-900">Employee / Emedic</p>
+                  <p className="font-medium text-ink-900">Employee / Agent</p>
                   <p className="text-sm text-ink-500">View your own COC record</p>
                 </div>
                 <span className="text-brand-500">&rarr;</span>

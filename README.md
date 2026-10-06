@@ -1,6 +1,6 @@
 # Orange Health — Code of Conduct Dashboard
 
-Read-only dashboard for Operations and Emedics to track Code of Conduct (COC)
+Read-only dashboard for Operations and Agents to track Code of Conduct (COC)
 points. Violation data lives in a Google Sheet that Ops edits directly, and
 policy/penalty-point content lives in a Google Slides deck — this app never
 writes to either. Auth and role/Employee-ID mapping are backed by Firebase.

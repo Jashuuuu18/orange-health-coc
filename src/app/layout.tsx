@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Code of Conduct Dashboard | Orange Health",
-  description: "COC points tracking dashboard for Operations and Emedics.",
+  description: "COC points tracking dashboard for Operations and Agents.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
